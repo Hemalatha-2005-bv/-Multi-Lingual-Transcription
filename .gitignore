@@ -1,0 +1,69 @@
+# ── Python ────────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg
+*.egg-info/
+dist/
+build/
+*.spec
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# ── Claude Code (local IDE settings — not for repo) ──────────────────────────
+.claude/
+
+# ── FastAPI / Backend ─────────────────────────────────────────────────────────
+backend/transcription.db
+backend/*.db
+backend/*.db-shm
+backend/*.db-wal
+
+# Uploaded / temp audio files
+backend/tmp/
+tmp/
+*.wav
+*.webm
+*.mp4
+*.mp3
+*.m4a
+*.mkv
+*.avi
+
+# Whisper model cache (downloaded automatically)
+# ~/.cache/huggingface is outside the repo, but guard local copies
+backend/models/
+models/
+
+# Environment variables (contains secrets/paths)
+.env
+.env.*
+!.env.example
+
+# ── Node / Frontend ───────────────────────────────────────────────────────────
+node_modules/
+frontend/node_modules/
+dist/
+frontend/dist/
+.vite/
+
+# ── IDE / Editor ──────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# ── Logs ─────────────────────────────────────────────────────────────────────
+*.log
+logs/
+
+# ── Misc ──────────────────────────────────────────────────────────────────────
+# Windows kill/taskkill scripts generated during debugging
+Kill
+taskkill
