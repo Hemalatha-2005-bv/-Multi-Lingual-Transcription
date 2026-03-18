@@ -46,7 +46,7 @@ export const useLiveStore = defineStore('live', () => {
       () => {
         isProcessing.value = false
         isRecording.value = false
-        error.value = 'WebSocket connection error. Check that the backend is running on port 8001.'
+        error.value = 'WebSocket connection error. Check that the backend is running.'
       },
       () => {
         // Server closed the socket before we got a result
