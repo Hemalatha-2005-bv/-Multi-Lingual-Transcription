@@ -1,7 +1,6 @@
 {
   "buildCommand": "cd frontend && npm install && npm run build",
   "outputDirectory": "frontend/dist",
-  "framework": "vite",
   "build": {
     "env": {
       "VITE_API_BASE_URL": "https://multi-lingual-transcription.onrender.com",
