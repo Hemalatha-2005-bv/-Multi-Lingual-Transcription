@@ -1,0 +1,3 @@
+# Dependencies are managed by pyproject.toml via uv.
+# This file exists only to satisfy Render's Python auto-detection.
+# The actual build runs: uv sync --no-dev
