@@ -13,4 +13,4 @@ services:
       - key: FFPROBE_PATH
         value: ffprobe
       - key: CORS_ORIGINS
-        value: '["https://your-frontend.onrender.com"]'
+        value: '["https://multi-lingual-transcription.vercel.app"]'
