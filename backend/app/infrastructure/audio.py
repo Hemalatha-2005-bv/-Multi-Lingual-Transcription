@@ -7,6 +7,7 @@ and works on Windows without requiring ProactorEventLoop.
 import asyncio
 import logging
 import os
+import shutil
 import subprocess
 
 from app.core.config import get_settings
@@ -14,6 +15,17 @@ from app.core.exceptions import FFmpegError
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
+
+
+def _resolve_bin(configured: str, fallback: str = "ffmpeg") -> str:
+    """Return configured path if it exists on disk, else find fallback on PATH."""
+    if os.path.isfile(configured):
+        return configured
+    found = shutil.which(configured) or shutil.which(fallback)
+    return found or configured
+
+
+FFMPEG_CMD = _resolve_bin(settings.FFMPEG_PATH, "ffmpeg")
 
 
 async def extract_audio(video_path: str, output_path: str) -> str:
@@ -29,7 +41,7 @@ async def extract_audio(video_path: str, output_path: str) -> str:
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
 
     cmd = [
-        settings.FFMPEG_PATH,
+        FFMPEG_CMD,
         "-y",
         "-i", video_path,
         "-vn",
