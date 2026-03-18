@@ -3,8 +3,9 @@
  * Returns an object with send(), close(), and an onMessage callback setter.
  */
 export function createLiveSocket(language = 'auto', onMessage, onError, onClose) {
-  const protocol = location.protocol === 'https:' ? 'wss' : 'ws'
-  const url = `${protocol}://${location.host}/ws/transcribe-live?language=${language}`
+  const url = import.meta.env.VITE_WS_BASE_URL
+    ? `${import.meta.env.VITE_WS_BASE_URL}/ws/transcribe-live?language=${language}`
+    : `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws/transcribe-live?language=${language}`
   const ws = new WebSocket(url)
   ws.binaryType = 'arraybuffer'
 

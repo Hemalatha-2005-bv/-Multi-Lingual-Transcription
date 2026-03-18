@@ -1,7 +1,11 @@
 import axios from 'axios'
 
+const BASE = import.meta.env.VITE_API_BASE_URL
+  ? `${import.meta.env.VITE_API_BASE_URL}/api`
+  : '/api'
+
 const http = axios.create({
-  baseURL: '/api',
+  baseURL: BASE,
   timeout: 0, // No timeout — large file uploads can take a long time
 })
 
@@ -26,6 +30,9 @@ export async function pollStatus(jobId) {
 }
 
 export async function checkHealth() {
-  const { data } = await axios.get('/health')
+  const url = import.meta.env.VITE_API_BASE_URL
+    ? `${import.meta.env.VITE_API_BASE_URL}/health`
+    : '/health'
+  const { data } = await axios.get(url)
   return data
 }
