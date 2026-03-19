@@ -1,7 +1,7 @@
 {
-  "installCommand": "cd frontend && npm install",
-  "buildCommand": "cd frontend && npm run build",
-  "outputDirectory": "frontend/dist",
+  "installCommand": "npm install",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
   "build": {
     "env": {
       "VITE_API_BASE_URL": "https://multi-lingual-transcription.onrender.com",
