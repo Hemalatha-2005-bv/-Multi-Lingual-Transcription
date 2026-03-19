@@ -1,6 +1,10 @@
 {
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
+  "routes": [
+    { "handle": "filesystem" },
+    { "src": "/(.*)", "dest": "/index.html" }
+  ],
   "build": {
     "env": {
       "VITE_API_BASE_URL": "https://multi-lingual-transcription.onrender.com",
