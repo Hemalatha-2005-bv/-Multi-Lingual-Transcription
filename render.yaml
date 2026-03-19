@@ -13,4 +13,4 @@ services:
       - key: FFPROBE_PATH
         value: ffprobe
       - key: CORS_ORIGINS
-        value: '["https://multi-lingual-transcription.vercel.app"]'
+        value: '["https://multi-lingual-transcription.vercel.app","https://multi-lingual-transcription-hemalatha-2005-bvs-projects.vercel.app","https://multi-lingual-transcription-git-main-hemalatha-2005-bvs-projects.vercel.app"]'
