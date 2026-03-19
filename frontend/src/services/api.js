@@ -2,7 +2,7 @@ import axios from 'axios'
 
 const BASE = import.meta.env.VITE_API_BASE_URL
   ? `${import.meta.env.VITE_API_BASE_URL}/api`
-  : '/api'
+  : 'https://multi-lingual-transcription.onrender.com/api'
 
 const http = axios.create({
   baseURL: BASE,
@@ -32,7 +32,7 @@ export async function pollStatus(jobId) {
 export async function checkHealth() {
   const url = import.meta.env.VITE_API_BASE_URL
     ? `${import.meta.env.VITE_API_BASE_URL}/health`
-    : '/health'
+    : 'https://multi-lingual-transcription.onrender.com/health'
   const { data } = await axios.get(url)
   return data
 }

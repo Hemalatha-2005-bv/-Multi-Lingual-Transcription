@@ -5,7 +5,7 @@
 export function createLiveSocket(language = 'auto', onMessage, onError, onClose) {
   const url = import.meta.env.VITE_WS_BASE_URL
     ? `${import.meta.env.VITE_WS_BASE_URL}/ws/transcribe-live?language=${language}`
-    : `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/ws/transcribe-live?language=${language}`
+    : `wss://multi-lingual-transcription.onrender.com/ws/transcribe-live?language=${language}`
   const ws = new WebSocket(url)
   ws.binaryType = 'arraybuffer'
 
