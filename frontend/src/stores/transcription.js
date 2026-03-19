@@ -15,9 +15,12 @@ export const useTranscriptionStore = defineStore('transcription', () => {
   const uploadProgress = ref(0)
 
   let _pollTimer = null
+  let _pollErrors = 0
+  const MAX_POLL_ERRORS = 5
 
   function reset() {
     stopPolling()
+    _pollErrors = 0
     jobId.value = null
     status.value = null
     step.value = ''
@@ -84,9 +87,17 @@ export const useTranscriptionStore = defineStore('transcription', () => {
           title.value = data.title || ''
         }
       } catch (e) {
-        stopPolling()
-        status.value = 'error'
-        error.value = 'Lost connection to server.'
+        _pollErrors++
+        if (_pollErrors >= MAX_POLL_ERRORS) {
+          stopPolling()
+          status.value = 'error'
+          const httpStatus = e.response?.status
+          if (httpStatus === 404) {
+            error.value = 'Job not found. The server may have restarted — please try again.'
+          } else {
+            error.value = 'Lost connection to server. Please check your connection and try again.'
+          }
+        }
       }
     }, 2000)
   }
