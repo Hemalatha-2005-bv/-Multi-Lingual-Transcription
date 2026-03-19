@@ -38,8 +38,8 @@ def load_model(model_name: str = "medium") -> None:
             from faster_whisper import WhisperModel
             # "auto" lets CTranslate2 pick the best compute type the CPU supports.
             # "int8" can raise NotImplementedError on CPUs without AVX-VNNI/BLAS support.
-            logger.info("Loading faster-whisper '%s' (auto)...", model_name)
-            _model = WhisperModel(model_name, device="cpu", compute_type="auto")
+            logger.info("Loading faster-whisper '%s' (int8)...", model_name)
+            _model = WhisperModel(model_name, device="cpu", compute_type="int8")
             logger.info("faster-whisper '%s' loaded.", model_name)
 
 
