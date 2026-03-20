@@ -43,12 +43,16 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { useTranscriptionStore } from '../stores/transcription.js'
 import FileUpload from '../components/FileUpload.vue'
 import YoutubeUpload from '../components/YoutubeUpload.vue'
 import TranscriptionDisplay from '../components/TranscriptionDisplay.vue'
+import { checkHealth } from '../services/api.js'
 
 const activeTab = ref('file')
 const store = useTranscriptionStore()
+
+// Wake up the Render free-tier backend on page load so it's ready when the user submits
+onMounted(() => { checkHealth().catch(() => {}) })
 </script>
