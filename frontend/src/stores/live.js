@@ -58,7 +58,12 @@ export const useLiveStore = defineStore('live', () => {
       },
     )
 
-    _mediaRecorder = new MediaRecorder(_stream)
+    const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+      ? 'audio/webm;codecs=opus'
+      : MediaRecorder.isTypeSupported('audio/webm')
+      ? 'audio/webm'
+      : ''
+    _mediaRecorder = new MediaRecorder(_stream, mimeType ? { mimeType } : {})
     _mediaRecorder.ondataavailable = (e) => {
       if (e.data.size > 0) _socket.send(e.data)
     }

@@ -56,32 +56,44 @@ class LiveTranscriptionSession:
             yield msg
 
     def _transcribe_thread(self) -> None:
-        tmp_wav: Optional[str] = None
+        tmp_audio: Optional[str] = None  # input: .webm or .ogg
+        tmp_wav: Optional[str] = None    # output: 16kHz PCM WAV
         try:
             if not self._chunks:
                 return
 
             audio_data = b"".join(self._chunks)
 
-            # Pipe audio directly to FFmpeg with explicit format — avoids
-            # "EBML header parsing failed" that occurs when the browser's
-            # MediaRecorder chunks don't form a perfectly valid WebM file
-            # when written to disk and auto-detected.
+            # Detect container format from magic bytes so FFmpeg doesn't have
+            # to guess (and so OGG from Firefox works alongside WebM from Chrome).
+            # WebM/MKV magic: 0x1A 0x45 0xDF 0xA3
+            # OGG magic:      OggS (0x4F 0x67 0x67 0x53)
+            if audio_data[:4] == b"OggS":
+                suffix = ".ogg"
+            else:
+                suffix = ".webm"
+
+            # Write to a seekable temp file — stdin pipe breaks WebM/EBML
+            # parsing because the demuxer needs random-access for header seeks.
+            fd, tmp_audio = tempfile.mkstemp(suffix=suffix)
+            try:
+                os.write(fd, audio_data)
+            finally:
+                os.close(fd)
+
             fd, tmp_wav = tempfile.mkstemp(suffix=".wav")
             os.close(fd)
             result = subprocess.run(
                 [
                     FFMPEG_CMD, "-y",
                     "-fflags", "+igndts+genpts",
-                    "-f", "webm",       # force input format — skip auto-detection
-                    "-i", "pipe:0",     # read from stdin
+                    "-i", tmp_audio,    # seekable file — FFmpeg auto-detects format
                     "-vn",
                     "-ar", "16000",
                     "-ac", "1",
                     "-acodec", "pcm_s16le",
                     tmp_wav,
                 ],
-                input=audio_data,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 timeout=60,
@@ -114,11 +126,12 @@ class LiveTranscriptionSession:
             logger.error("LiveSession error: %s", e, exc_info=True)
             self._put({"type": "error", "message": str(e)})
         finally:
-            if tmp_wav and os.path.exists(tmp_wav):
-                try:
-                    os.remove(tmp_wav)
-                except OSError:
-                    pass
+            for path in (tmp_audio, tmp_wav):
+                if path and os.path.exists(path):
+                    try:
+                        os.remove(path)
+                    except OSError:
+                        pass
             self._put(None)  # sentinel — end of stream
 
     def _put(self, msg: Optional[dict]) -> None:
