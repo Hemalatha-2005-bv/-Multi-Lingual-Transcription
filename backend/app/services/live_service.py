@@ -56,30 +56,32 @@ class LiveTranscriptionSession:
             yield msg
 
     def _transcribe_thread(self) -> None:
-        tmp_webm: Optional[str] = None
         tmp_wav: Optional[str] = None
         try:
             if not self._chunks:
                 return
 
-            fd, tmp_webm = tempfile.mkstemp(suffix=".webm")
-            with os.fdopen(fd, "wb") as f:
-                for chunk in self._chunks:
-                    f.write(chunk)
+            audio_data = b"".join(self._chunks)
 
-            tmp_wav = tmp_webm.replace(".webm", ".wav")
+            # Pipe audio directly to FFmpeg with explicit format — avoids
+            # "EBML header parsing failed" that occurs when the browser's
+            # MediaRecorder chunks don't form a perfectly valid WebM file
+            # when written to disk and auto-detected.
+            fd, tmp_wav = tempfile.mkstemp(suffix=".wav")
+            os.close(fd)
             result = subprocess.run(
                 [
                     FFMPEG_CMD, "-y",
                     "-fflags", "+igndts+genpts",
-                    "-err_detect", "ignore_err",
-                    "-i", tmp_webm,
+                    "-f", "webm",       # force input format — skip auto-detection
+                    "-i", "pipe:0",     # read from stdin
                     "-vn",
                     "-ar", "16000",
                     "-ac", "1",
                     "-acodec", "pcm_s16le",
                     tmp_wav,
                 ],
+                input=audio_data,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 timeout=60,
@@ -112,12 +114,11 @@ class LiveTranscriptionSession:
             logger.error("LiveSession error: %s", e, exc_info=True)
             self._put({"type": "error", "message": str(e)})
         finally:
-            for path in (tmp_webm, tmp_wav):
-                if path and os.path.exists(path):
-                    try:
-                        os.remove(path)
-                    except OSError:
-                        pass
+            if tmp_wav and os.path.exists(tmp_wav):
+                try:
+                    os.remove(tmp_wav)
+                except OSError:
+                    pass
             self._put(None)  # sentinel — end of stream
 
     def _put(self, msg: Optional[dict]) -> None:
