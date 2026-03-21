@@ -3,7 +3,6 @@ import tempfile
 from functools import lru_cache
 from typing import List
 
-from pydantic import field_validator
 from pydantic_settings import BaseSettings
 
 
@@ -32,20 +31,6 @@ class Settings(BaseSettings):
         "https://multi-lingual-transcription.vercel.app",
     ]
 
-    @field_validator("CORS_ORIGINS", mode="before")
-    @classmethod
-    def _parse_cors(cls, v):
-        if isinstance(v, str) and not v.strip():
-            return [
-                "http://localhost:5173",
-                "http://localhost:3000",
-                "http://127.0.0.1:5173",
-                "http://127.0.0.1:3000",
-                "http://127.0.0.1:8000",
-                "https://multi-lingual-transcription.vercel.app",
-            ]
-        return v
-
     # FFmpeg / FFprobe paths (use system PATH by default)
     FFMPEG_PATH: str = "ffmpeg"
     FFPROBE_PATH: str = "ffprobe"
@@ -58,4 +43,9 @@ class Settings(BaseSettings):
 
 @lru_cache
 def get_settings() -> Settings:
+    # pydantic-settings crashes if CORS_ORIGINS is set to an empty string
+    # (it tries json.loads("") which raises JSONDecodeError before any validator runs).
+    # Strip it from the environment so the field default is used instead.
+    if not os.environ.get("CORS_ORIGINS", "").strip():
+        os.environ.pop("CORS_ORIGINS", None)
     return Settings()
