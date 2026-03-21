@@ -17,10 +17,9 @@ import threading
 from typing import AsyncGenerator, Optional
 
 from app.infrastructure.whisper import resolve_language, transcribe_sync
-from app.core.config import get_settings
+from app.infrastructure.audio import FFMPEG_CMD
 
 logger = logging.getLogger(__name__)
-settings = get_settings()
 
 
 class LiveTranscriptionSession:
@@ -71,7 +70,7 @@ class LiveTranscriptionSession:
             tmp_wav = tmp_webm.replace(".webm", ".wav")
             result = subprocess.run(
                 [
-                    settings.FFMPEG_PATH, "-y",
+                    FFMPEG_CMD, "-y",
                     "-i", tmp_webm,
                     "-ar", "16000",
                     "-ac", "1",
