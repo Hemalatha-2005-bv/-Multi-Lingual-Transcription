@@ -64,18 +64,13 @@ class LiveTranscriptionSession:
 
             audio_data = b"".join(self._chunks)
 
-            # Detect container format from magic bytes so FFmpeg doesn't have
-            # to guess (and so OGG from Firefox works alongside WebM from Chrome).
-            # WebM/MKV magic: 0x1A 0x45 0xDF 0xA3
-            # OGG magic:      OggS (0x4F 0x67 0x67 0x53)
-            if audio_data[:4] == b"OggS":
-                suffix = ".ogg"
-            else:
-                suffix = ".webm"
+            magic = audio_data[:8].hex()
+            logger.info("Audio data: %d bytes, magic=%s", len(audio_data), magic)
 
             # Write to a seekable temp file — stdin pipe breaks WebM/EBML
             # parsing because the demuxer needs random-access for header seeks.
-            fd, tmp_audio = tempfile.mkstemp(suffix=suffix)
+            # Use .webm suffix so FFmpeg tries matroska demuxer first.
+            fd, tmp_audio = tempfile.mkstemp(suffix=".webm")
             try:
                 os.write(fd, audio_data)
             finally:
@@ -83,24 +78,28 @@ class LiveTranscriptionSession:
 
             fd, tmp_wav = tempfile.mkstemp(suffix=".wav")
             os.close(fd)
-            result = subprocess.run(
-                [
-                    FFMPEG_CMD, "-y",
-                    "-fflags", "+igndts+genpts",
-                    "-i", tmp_audio,    # seekable file — FFmpeg auto-detects format
-                    "-vn",
-                    "-ar", "16000",
-                    "-ac", "1",
-                    "-acodec", "pcm_s16le",
-                    tmp_wav,
-                ],
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                timeout=60,
-            )
-            if result.returncode != 0:
-                err = result.stderr.decode(errors="replace")
-                raise RuntimeError(f"FFmpeg failed (exit {result.returncode}):\n{err}")
+
+            # Try multiple input formats — browser may send WebM, OGG, or MP4
+            # depending on browser/OS. Auto-detect first, then force each format.
+            formats_to_try: list[Optional[str]] = [None, "webm", "ogg", "matroska", "mp4"]
+            result = None
+            for fmt in formats_to_try:
+                cmd = [FFMPEG_CMD, "-y", "-fflags", "+igndts+genpts"]
+                if fmt:
+                    cmd += ["-f", fmt]
+                cmd += ["-i", tmp_audio, "-vn", "-ar", "16000", "-ac", "1", "-acodec", "pcm_s16le", tmp_wav]
+                result = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, timeout=60)
+                if result.returncode == 0:
+                    logger.info("FFmpeg succeeded with format=%s", fmt or "auto")
+                    break
+                logger.warning("FFmpeg format=%s failed: %s", fmt or "auto",
+                               result.stderr.decode(errors="replace")[-200:])
+
+            if result is None or result.returncode != 0:
+                err = result.stderr.decode(errors="replace") if result else "no result"
+                raise RuntimeError(
+                    f"FFmpeg failed all formats (magic={magic}, size={len(audio_data)}):\n{err}"
+                )
 
             language = resolve_language(self._language_code)
             segments = transcribe_sync(tmp_wav, language)
