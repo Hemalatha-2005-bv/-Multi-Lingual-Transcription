@@ -71,7 +71,10 @@ class LiveTranscriptionSession:
             result = subprocess.run(
                 [
                     FFMPEG_CMD, "-y",
+                    "-fflags", "+igndts+genpts",
+                    "-err_detect", "ignore_err",
                     "-i", tmp_webm,
+                    "-vn",
                     "-ar", "16000",
                     "-ac", "1",
                     "-acodec", "pcm_s16le",
