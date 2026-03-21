@@ -22,12 +22,16 @@ router = APIRouter()
 
 
 def _origin_allowed(origin: str | None) -> bool:
+    import re
     if origin is None:
         return True
-    return any(
-        origin.rstrip("/") == allowed.rstrip("/")
-        for allowed in settings.CORS_ORIGINS
-    )
+    cleaned = origin.rstrip("/")
+    if any(cleaned == a.rstrip("/") for a in settings.CORS_ORIGINS):
+        return True
+    # Also allow all Vercel deployment URLs (previews have unique subdomains)
+    if re.match(r"https://[^.]+\.vercel\.app$", cleaned):
+        return True
+    return False
 
 
 @router.websocket("/ws/transcribe-live")
