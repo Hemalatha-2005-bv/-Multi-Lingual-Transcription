@@ -38,14 +38,9 @@ class Settings(BaseSettings):
     def get_temp_dir(self) -> str:
         return self.TEMP_DIR or _default_temp_dir()
 
-    model_config = {"env_file": ".env"}
+    model_config = {"env_file": ".env", "env_ignore_empty": True}
 
 
 @lru_cache
 def get_settings() -> Settings:
-    # pydantic-settings crashes if CORS_ORIGINS is set to an empty string
-    # (it tries json.loads("") which raises JSONDecodeError before any validator runs).
-    # Strip it from the environment so the field default is used instead.
-    if not os.environ.get("CORS_ORIGINS", "").strip():
-        os.environ.pop("CORS_ORIGINS", None)
     return Settings()
