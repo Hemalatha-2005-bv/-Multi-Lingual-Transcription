@@ -9,6 +9,14 @@ export function createLiveSocket(language = 'auto', onMessage, onError, onClose)
   const ws = new WebSocket(url)
   ws.binaryType = 'arraybuffer'
 
+  // Buffer chunks sent while the socket is still connecting.
+  // The first MediaRecorder chunk (250ms) contains the EBML/container header
+  // and must not be dropped — without it the server gets headerless audio data.
+  const _pending = []
+  ws.onopen = () => {
+    _pending.splice(0).forEach((chunk) => ws.send(chunk))
+  }
+
   ws.onmessage = (event) => {
     try {
       const msg = JSON.parse(event.data)
@@ -21,7 +29,13 @@ export function createLiveSocket(language = 'auto', onMessage, onError, onClose)
   ws.onclose = () => onClose && onClose()
 
   return {
-    send: (bytes) => ws.readyState === WebSocket.OPEN && ws.send(bytes),
+    send: (bytes) => {
+      if (ws.readyState === WebSocket.CONNECTING) {
+        _pending.push(bytes)
+      } else if (ws.readyState === WebSocket.OPEN) {
+        ws.send(bytes)
+      }
+    },
     close: () => ws.close(),
   }
 }
